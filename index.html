@@ -6,6 +6,13 @@
 
 <header class="header"><div class="logo" aria-label="SIEW">S</div><div><div class="brand">SIEW</div><div class="tag">SISTEM SKRINING KESEHATAN</div></div><div class="status" id="connectionText">Memeriksa ESP32...</div></header>
 
+<section class="card github-bridge" id="githubBridge" hidden>
+<div class="card-head"><h2>Hubungkan ke ESP32</h2><span class="badge">MODE GITHUB</span></div>
+<p>GitHub Pages hanya menampilkan pratinjau. Browser membatasi akses langsung dari halaman HTTPS ke API HTTP lokal ESP32. Untuk memakai tombol pindai Wi-Fi, submit, dan data sensor, sambungkan perangkat ke hotspot SIEW lalu buka panel lokal ESP32.</p>
+<div class="inline"><label class="sr-only" for="espAddress">Alamat panel ESP32</label><input id="espAddress" type="url" value="http://192.168.4.1" placeholder="http://192.168.4.1" inputmode="url"><button class="btn" id="openEsp32Panel" type="button">Buka Panel ESP32</button></div>
+<p class="help" id="githubBridgeStatus">Pastikan perangkat sudah tersambung ke hotspot SIEW sebelum membuka panel lokal.</p>
+</section>
+
 <h1>Monitoring SIEW</h1><p class="intro">Atur koneksi Wi-Fi, isi data peserta dan suhu tubuh, lalu pantau empat parameter dan kesimpulan gabungan pada halaman yang sama.</p>
 
 <section class="card" id="wifiSection"><div class="card-head"><h2>1. Konfigurasi Wi-Fi</h2><span class="badge">KONEKSI</span></div><form id="wifiForm"><div class="grid"><div class="field"><label for="wifiSsid">Pilih Wi-Fi yang akan dihubungkan</label><div class="inline"><select id="wifiSsid" required><option value="">Klik Pindai Wi-Fi terlebih dahulu</option></select><button class="btn secondary small" id="scanWifi" type="button">Pindai</button></div></div><div class="field"><label for="wifiPassword">Password Wi-Fi</label><input id="wifiPassword" type="password" maxlength="63" placeholder="Password Wi-Fi (jika ada)"></div></div><div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" type="submit">Simpan & hubungkan</button><span class="help" id="wifiStatus">Hotspot SIEW tetap aktif saat menghubungkan Wi-Fi.</span></div></form></section>

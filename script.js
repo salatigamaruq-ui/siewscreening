@@ -1,4 +1,29 @@
-const $=id=>document.getElementById(id);let espBase=location.origin;let timer=null;let toastTimer=null;let lastManualTemp=null;$('year').textContent=new Date().getFullYear();
+const $=id=>document.getElementById(id);
+const isGitHubPages = location.hostname.endsWith('github.io');
+let espBase=location.origin;let timer=null;let toastTimer=null;let lastManualTemp=null;
+$('year').textContent=new Date().getFullYear();
+
+function getEspAddress(){
+  const raw = isGitHubPages ? ($('espAddress')?.value || 'http://192.168.4.1') : location.origin;
+  return raw.trim().replace(/\/$/, '');
+}
+function openEspPanel(message){
+  const address=getEspAddress();
+  if(!/^https?:\/\//i.test(address)){toast('Alamat ESP32 harus diawali http:// atau https://');return;}
+  // Buka langsung dari aksi pengguna agar tidak diblokir popup blocker.
+  window.open(address+'/', '_blank', 'noopener');
+  if(message) toast(message);
+}
+if(isGitHubPages){
+  $('githubBridge').hidden=false;
+  setConn(false,'Mode pratinjau GitHub Pages');
+  $('updatedLabel').textContent='PRATINJAU';
+  $('sensorStatus').textContent='Untuk data langsung, buka panel lokal ESP32 melalui tombol di atas.';
+  $('resultTitle').textContent='PANEL ESP32 BELUM DIBUKA';
+  $('resultDescription').textContent='GitHub Pages tidak dapat membaca API HTTP lokal ESP32 secara langsung. Gunakan panel lokal ESP32 untuk pengukuran dan pengiriman data.';
+  $('openEsp32Panel').addEventListener('click',()=>openEspPanel('Panel lokal dibuka di tab baru. Jika gagal, sambungkan ke hotspot SIEW terlebih dahulu.'));
+}
+
 
 function toast(m){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3200)}
 
@@ -13,7 +38,7 @@ let latestSensorData={bpm:null,spo2:null,respiratory_rate:null,status:'MENUNGGU 
 $('participantForm').addEventListener('submit',e=>e.preventDefault());
 
 $('submitAllData').addEventListener('click',async()=>{
-
+ if(isGitHubPages){openEspPanel('Submit sensor harus dilakukan dari panel lokal ESP32. Isi ulang data pada panel tersebut.');return;}
  const form=$('participantForm');
 
  if(!form.reportValidity()){toast('Lengkapi semua data peserta dan suhu terlebih dahulu.');return}
@@ -58,9 +83,9 @@ $('submitAllData').addEventListener('click',async()=>{
 
 });
 
-$('scanWifi').addEventListener('click',async()=>{const b=$('scanWifi');const sel=$('wifiSsid');b.disabled=true;b.textContent='Memindai…';try{const r=await fetch(espBase+'/api/wifi/scan',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();const list=(d.networks||[]).map(n=>n.ssid).filter(Boolean);sel.innerHTML='';const first=document.createElement('option');first.value='';first.textContent=list.length?'Pilih jaringan Wi-Fi':'Tidak ada jaringan ditemukan';sel.appendChild(first);list.forEach(ssid=>{const opt=document.createElement('option');opt.value=ssid;opt.textContent=ssid;sel.appendChild(opt)});if(!list.length)toast('Tidak ada Wi-Fi ditemukan. Coba pindai lagi.');else toast(list.length+' jaringan Wi-Fi ditemukan.')}catch(e){toast('Pemindaian gagal. Pastikan terhubung ke hotspot SIEW.')}finally{b.disabled=false;b.textContent='Pindai'}});
+$('scanWifi').addEventListener('click',async()=>{if(isGitHubPages){openEspPanel('Pemindaian Wi-Fi berjalan dari panel lokal ESP32.');return;}const b=$('scanWifi');const sel=$('wifiSsid');b.disabled=true;b.textContent='Memindai…';try{const r=await fetch(espBase+'/api/wifi/scan',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();const list=(d.networks||[]).map(n=>n.ssid).filter(Boolean);sel.innerHTML='';const first=document.createElement('option');first.value='';first.textContent=list.length?'Pilih jaringan Wi-Fi':'Tidak ada jaringan ditemukan';sel.appendChild(first);list.forEach(ssid=>{const opt=document.createElement('option');opt.value=ssid;opt.textContent=ssid;sel.appendChild(opt)});if(!list.length)toast('Tidak ada Wi-Fi ditemukan. Coba pindai lagi.');else toast(list.length+' jaringan Wi-Fi ditemukan.')}catch(e){toast('Pemindaian gagal. Pastikan terhubung ke hotspot SIEW.')}finally{b.disabled=false;b.textContent='Pindai'}});
 
-$('wifiForm').addEventListener('submit',async e=>{e.preventDefault();const ssid=$('wifiSsid').value.trim();const password=$('wifiPassword').value;if(!ssid){toast('Masukkan SSID Wi-Fi.');return}try{const body=new URLSearchParams({ssid,password});const r=await fetch(espBase+'/api/wifi/save',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const d=await r.json();if(!r.ok)throw Error(d.message||'Gagal');$('wifiStatus').textContent='Konfigurasi disimpan. Periksa status koneksi beberapa saat lagi.';toast(d.message||'Konfigurasi Wi-Fi disimpan.');setTimeout(poll,1800)}catch(e){toast('Tidak dapat menyimpan Wi-Fi. Pastikan tersambung ke hotspot SIEW.')}});
+$('wifiForm').addEventListener('submit',async e=>{e.preventDefault();if(isGitHubPages){openEspPanel('Simpan Wi-Fi harus dilakukan dari panel lokal ESP32.');return;}const ssid=$('wifiSsid').value.trim();const password=$('wifiPassword').value;if(!ssid){toast('Masukkan SSID Wi-Fi.');return}try{const body=new URLSearchParams({ssid,password});const r=await fetch(espBase+'/api/wifi/save',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const d=await r.json();if(!r.ok)throw Error(d.message||'Gagal');$('wifiStatus').textContent='Konfigurasi disimpan. Periksa status koneksi beberapa saat lagi.';toast(d.message||'Konfigurasi Wi-Fi disimpan.');setTimeout(poll,1800)}catch(e){toast('Tidak dapat menyimpan Wi-Fi. Pastikan tersambung ke hotspot SIEW.')}});
 
 // GitHub Pages memakai HTTPS dan tidak dapat langsung menjalankan API HTTP lokal ESP32.
 // Untuk data sensor langsung, buka halaman dari hotspot ESP32 (misalnya http://192.168.4.1/).
