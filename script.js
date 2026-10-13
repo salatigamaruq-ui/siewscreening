@@ -62,4 +62,16 @@ $('scanWifi').addEventListener('click',async()=>{const b=$('scanWifi');const sel
 
 $('wifiForm').addEventListener('submit',async e=>{e.preventDefault();const ssid=$('wifiSsid').value.trim();const password=$('wifiPassword').value;if(!ssid){toast('Masukkan SSID Wi-Fi.');return}try{const body=new URLSearchParams({ssid,password});const r=await fetch(espBase+'/api/wifi/save',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const d=await r.json();if(!r.ok)throw Error(d.message||'Gagal');$('wifiStatus').textContent='Konfigurasi disimpan. Periksa status koneksi beberapa saat lagi.';toast(d.message||'Konfigurasi Wi-Fi disimpan.');setTimeout(poll,1800)}catch(e){toast('Tidak dapat menyimpan Wi-Fi. Pastikan tersambung ke hotspot SIEW.')}});
 
-poll();timer=setInterval(poll,2500);
+// GitHub Pages memakai HTTPS dan tidak dapat langsung menjalankan API HTTP lokal ESP32.
+// Untuk data sensor langsung, buka halaman dari hotspot ESP32 (misalnya http://192.168.4.1/).
+if (location.hostname.endsWith('github.io')) {
+  setConn(false, 'Pratinjau GitHub Pages');
+  $('sensorStatus').textContent = 'Mode GitHub Pages hanya untuk pratinjau tampilan. Untuk membaca sensor dan mengirim data, sambungkan perangkat ke hotspot SIEW lalu buka alamat IP ESP32.';
+  ['scanWifi','submitAllData'].forEach(id => { const el=$(id); if(el) el.disabled=true; });
+  document.querySelectorAll('#wifiForm input, #wifiForm select, #wifiForm button').forEach(el => el.disabled=true);
+  document.querySelectorAll('#participantForm input, #participantForm select, #participantForm button').forEach(el => el.disabled=true);
+  $('updatedLabel').textContent = 'MODE PRATINJAU';
+} else {
+  poll();
+  timer=setInterval(poll,2500);
+}
